@@ -1,43 +1,54 @@
 defmodule FileSniffer do
+  @file_specs [
+    %{
+      extension: "exe",
+      media_type: "application/octet-stream",
+      signature: <<0x7F, 0x45, 0x4C, 0x46>>
+    },
+    %{
+      extension: "bmp",
+      media_type: "image/bmp",
+      signature: <<0x42, 0x4D>>
+    },
+    %{
+      extension: "png",
+      media_type: "image/png",
+      signature: <<0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A>>
+    },
+    %{
+      extension: "jpg",
+      media_type: "image/jpg",
+      signature: <<0xFF, 0xD8, 0xFF>>
+    },
+    %{
+      extension: "gif",
+      media_type: "image/gif",
+      signature: <<0x47, 0x49, 0x46>>
+    }
+  ]
+
   def type_from_extension(extension) do
-    case extension do
-      "exe" -> "application/octet-stream"
-      "bmp" -> "image/bmp"
-      "png" -> "image/png"
-      "jpg" -> "image/jpg"
-      "gif" -> "image/gif"
-      _ -> nil
-    end
+    @file_specs
+    # Find the file spec with the given extension, or empty
+    |> Enum.find(%{}, fn file_spec ->
+      file_spec.extension == extension
+    end)
+    # Get the media type of the found file spec, or nil if empty
+    |> Map.get(:media_type)
+  end
+
+  defp extension_from_binary(file_binary) do
+    @file_specs
+    # Find the file spec with a signature that matches the file binary, or empty
+    |> Enum.find(%{}, fn file_spec ->
+      String.starts_with?(file_binary, file_spec.signature)
+    end)
+    # Get the extension of the found file spec, or nil empty
+    |> Map.get(:extension)
   end
 
   def type_from_binary(file_binary) do
     file_binary |> extension_from_binary() |> type_from_extension()
-  end
-
-  defp extension_from_binary(<<0x7F::8, 0x45::8, 0x4C::8, 0x46::8, _::bitstring>>) do
-    "exe"
-  end
-
-  defp extension_from_binary(<<0x42::8, 0x4D::8, _::bitstring>>) do
-    "bmp"
-  end
-
-  defp extension_from_binary(
-         <<0x89::8, 0x50::8, 0x4E::8, 0x47::8, 0x0D::8, 0x0A::8, 0x1A::8, 0x0A::8, _::bitstring>>
-       ) do
-    "png"
-  end
-
-  defp extension_from_binary(<<0xFF::8, 0xD8::8, 0xFF::8, _::bitstring>>) do
-    "jpg"
-  end
-
-  defp extension_from_binary(<<0x47::8, 0x49::8, 0x46::8, _::bitstring>>) do
-    "gif"
-  end
-
-  defp extension_from_binary(<<_::bitstring>>) do
-    nil
   end
 
   def verify(file_binary, extension) do
