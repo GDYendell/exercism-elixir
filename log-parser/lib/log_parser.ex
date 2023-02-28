@@ -12,17 +12,11 @@ defmodule LogParser do
   end
 
   def tag_with_user_name(line) do
-    if Regex.match?(~r/User/, line) do
-      # Find non-whitespace username, wrapped in whitespace characters, following `User`
-      Regex.run(~r/User\s*(\S*)\s*/, line)
-      # Extract match group
-      |> Enum.at(1)
-      # Add to prefix
-      |> (&Kernel.<>("[USER] ", &1)).()
-      # Add a space
-      |> Kernel.<>(" ")
-      # Add the original line
-      |> Kernel.<>(line)
+    match = Regex.run(~r/User\s*(\S*)\s*/, line)
+
+    if match do
+      [_full_match, user] = match
+      "[USER] " <> user <> " " <> line
     else
       line
     end
